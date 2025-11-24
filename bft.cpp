@@ -22,6 +22,8 @@ int main(int argc, char *argv[]) {
   //The leader prepares his value
   Block leader_pre_prepare_payload = nodes[0]->pre_prepare_block(initial_value);
   //He broadcasts his value
+  
+
   nodes[0]->broadcast(leader_pre_prepare_payload);
   
   

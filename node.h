@@ -17,7 +17,8 @@ public:
   ~Node() { stop(); }
   void stop();
   void send_to(uint32_t id, Block payload);
-  void broadcast(Block payload);
+  void propose_block(Block block);
+  void broadcast(Block block);
   Block pre_prepare_block(Value value);
   Block prepare_block(Value value);
   Block commit_block(Value value);
@@ -47,6 +48,7 @@ private:
   //We map a instance id to a block
   std::map<uint32_t, Block> commited_blocks;
 
-    
-
+  //For out of order messages we shall receive
+  std::map<Block, std::vector<Message>> pending_prepare_messages;
+  
 };

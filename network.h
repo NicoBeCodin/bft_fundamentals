@@ -72,8 +72,6 @@ inline const char* to_string(MessageType t){
   }
 };
 
-void print_message_from_node(const uint32_t node, const Message& m);
-void print_string_from_node(const uint32_t node, const std::string);
 
 std::ostream& operator<<(std::ostream&, MessageType);
 std::ostream& operator<<(std::ostream&, const Value&);

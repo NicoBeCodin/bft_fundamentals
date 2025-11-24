@@ -68,15 +68,6 @@ std::ostream& operator<<(std::ostream& stream, const Message &msg){
 }
 
 
-void print_message_from_node(uint32_t node, const Message &msg) {
-  std::osyncstream bout(std::cout);
-  bout<<"Node: " << node<<' '<< msg << std::endl;
-};
-
-void print_string_from_node(uint32_t node, const std::string str){
-  std::osyncstream bout(std::cout);
-  bout << "Node: " << node << ' ' << str << std::endl;
-}
 
 
 std::string block_string(const Block b) {
@@ -86,10 +77,12 @@ std::string block_string(const Block b) {
   return block_string;
 }
 
+
+
 size_t Network::size() const noexcept { return inboxes.size(); }
 
 size_t Network::f_size() const noexcept {
-  size_t f = size() - 1 / 3;
+  size_t f = (size() - 1) / 3;
   return f;
 };
 
