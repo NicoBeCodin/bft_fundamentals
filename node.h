@@ -7,13 +7,13 @@
 #include <syncstream>
 
 #include "network.h"
+
 class Node {
 public:
   
   Node(uint32_t id, Network &network)
-      : m_id(id), m_network(network), m_running(true),
-        m_thread(&Node::run, this) {}
-
+      : m_id(id), m_network(network), m_running(true) {}
+  void start();
   ~Node() { stop(); }
   void stop();
   void send_to(uint32_t id, Block payload);
@@ -22,7 +22,8 @@ public:
   Block pre_prepare_block(Value value);
   Block prepare_block(Value value);
   Block commit_block(Value value);
-  void treat_message(Message msg);
+  uint8_t treat_message(Message msg);
+  void treat_message_queue();
   void print_message(const Message &msg);
   void print_string(const std::string string);
   uint32_t id() const noexcept;
@@ -37,9 +38,11 @@ private:
   uint32_t view = 0;
   uint32_t instance_id = 0;
   //We store the recent values for each
+  //
+  std::deque<Message> untreated;
+  std::map<uint32_t, std::vector<Message>> msg_for_instance;
+  
   std::unique_ptr<Block> pre_prepared_recent;
-  std::unique_ptr<Block> prepared_recent;
-  std::unique_ptr<Block> commit_recent;
 
   //To record votes for a block
   std::map<Block, std::set<uint32_t>> prepare_votes;
@@ -50,5 +53,7 @@ private:
 
   //For out of order messages we shall receive
   std::map<Block, std::vector<Message>> pending_prepare_messages;
+  std::map<Block, std::vector<Message>> pending_commit_messages;
+
   
 };

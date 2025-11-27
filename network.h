@@ -5,6 +5,7 @@
 #include <deque>
 #include <condition_variable>
 #include <string>
+#include <sstream>
 
 const size_t MIN_NODES = 4;
 
@@ -24,8 +25,14 @@ struct Value {
   uint32_t value;
 
   // bool operator!=(const Value&) const =default; 
-  bool operator==(const Value&) const =default; 
 };
+inline bool operator==(const Value& a, const Value& b){
+  return a.value == b.value;
+}
+
+inline bool operator<(const Value& a, const Value& b){
+  return a.value < b.value;
+}
 
 enum MessageType {
   PrePrepare,
@@ -41,17 +48,22 @@ struct Block {
   uint32_t view;
   uint32_t instance_id;
   Value value;
-
-  bool operator==(const Block&) const =default;
 };
 
+
 inline bool operator<(const Block& a, const Block& b) {
-  // Order by the same fields you consider for equality (and more if needed)
-  return std::tie(a.view, a.instance_id, a.type, a.value.value)
-       < std::tie(b.view, b.instance_id, b.type, b.value.value);
+    if (a.view        != b.view)        return a.view        < b.view;
+    if (a.instance_id != b.instance_id) return a.instance_id < b.instance_id;
+    if (a.type        != b.type)        return a.type        < b.type;
+    return a.value < b.value;
 }
 
-inline bool operator!=(const Block& a, const Block& b) { return !(a == b); }
+inline bool operator==(const Block& a, const Block& b) {
+    return a.view        == b.view &&
+           a.instance_id == b.instance_id &&
+           a.type        == b.type &&
+           a.value       == b.value;
+}inline bool operator!=(const Block& a, const Block& b) { return !(a == b); }
 
 inline const char* to_string(MessageType t);
 
@@ -77,6 +89,8 @@ std::ostream& operator<<(std::ostream&, MessageType);
 std::ostream& operator<<(std::ostream&, const Value&);
 std::ostream& operator<<(std::ostream&, const Block&);
 std::ostream& operator<<(std::ostream&, const Message&);
+
+std::string block_string(const Block &block);
 
 
 class Network{

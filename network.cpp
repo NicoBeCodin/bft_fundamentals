@@ -1,7 +1,6 @@
 #include "network.h"
 #include <cstring>
 #include <stdexcept>
-#include <syncstream>
 
 
 template <typename T>
@@ -69,8 +68,7 @@ std::ostream& operator<<(std::ostream& stream, const Message &msg){
 
 
 
-
-std::string block_string(const Block b) {
+std::string block_string(const Block &b) {
   std::string block_string = "Block view: " + std::to_string(b.instance_id) +
                              " Instance: " + std::to_string(b.instance_id) +
                              " Value: " + std::to_string(b.value.value);
@@ -89,4 +87,4 @@ size_t Network::f_size() const noexcept {
 size_t Network::quorum_size() const noexcept {
   size_t quorum_size = 2 * f_size() + 1;
   return quorum_size;
-}
+};

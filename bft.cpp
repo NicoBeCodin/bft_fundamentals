@@ -17,6 +17,10 @@ int main(int argc, char *argv[]) {
   for (int i = 0; i<n; i++){
     nodes.push_back(std::make_unique<Node>(static_cast<uint32_t>(i), network));
   }
+  // std::cout << "Created Node objects"<< std::endl;
+  for (auto& n: nodes){
+    n->start();
+  }
 
   Value initial_value = Value {67};
   //The leader prepares his value
