@@ -269,11 +269,11 @@ void Node::treat_message_queue() {
 
       if (treat_message(msg) == 0) { // 0 = success in your code
         // message fully handled, don't requeue
-        print_string("Treated msg");
+        // print_string("Treated msg");
         progress = true;
       } else {
         // not yet treatable -> put it back at the end
-        print_string("Failed treating msg");
+        // print_string("Failed treating msg");
         untreated.push_back(std::move(msg));
       }
     }
@@ -302,7 +302,7 @@ void Node::run() {
     }
     print_message(msg);
   }
-  
+  //We print the first committed block
   std::string bl_str ="Commited block: " +  block_string(commited_blocks[0]);
   print_string(bl_str);
   print_string("Shutting down...");

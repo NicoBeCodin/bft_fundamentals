@@ -1,0 +1,11 @@
+# To ignore executables -> Ignore all then unignore all files
+# Ignore all
+*
+# Unignore all files with extensions
+!*.*
+# Unignore all directories
+!*/
+
+# The rest of the patterns to ignore
+**.o
+

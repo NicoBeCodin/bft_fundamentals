@@ -16,14 +16,12 @@ public:
   void start();
   ~Node() { stop(); }
   void stop();
-  void send_to(uint32_t id, Block payload);
+  void send_to(uint32_t id, Block block);
   void propose_block(Block block);
   void broadcast(Block block);
   Block pre_prepare_block(Value value);
   Block prepare_block(Value value);
   Block commit_block(Value value);
-  uint8_t treat_message(Message msg);
-  void treat_message_queue();
   void print_message(const Message &msg);
   void print_string(const std::string string);
   uint32_t id() const noexcept;
@@ -31,6 +29,9 @@ public:
 
 private:
   void run();
+  uint8_t treat_message(Message msg);
+  void treat_message_queue();
+  
   uint32_t m_id;
   Network &m_network;
   std::atomic<bool> m_running;
