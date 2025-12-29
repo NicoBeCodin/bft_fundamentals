@@ -1,1 +1,0 @@
-/usr/bin/c++ -O3 -DNDEBUG CMakeFiles/bft_node.dir/src/main.cpp.o CMakeFiles/bft_node.dir/src/node.cpp.o CMakeFiles/bft_node.dir/src/tcp_transport.cpp.o CMakeFiles/bft_node.dir/src/bft_consensus.cpp.o CMakeFiles/bft_node.dir/src/message.cpp.o -o bft_node 

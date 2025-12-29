@@ -9,3 +9,4 @@
 # The rest of the patterns to ignore
 **.o
 
+/build/
