@@ -1,3 +1,4 @@
+#pragma once
 #include <iostream>
 #include <compare>
 #include <vector>
@@ -33,6 +34,8 @@ inline bool operator==(const Value& a, const Value& b){
 inline bool operator<(const Value& a, const Value& b){
   return a.value < b.value;
 }
+
+
 
 enum MessageType {
   PrePrepare,

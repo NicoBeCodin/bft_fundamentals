@@ -1,0 +1,3 @@
+/home/nico/Desktop/code_projects/blockchain_experiments/bft_fundamentals/build/CMakeFiles/bft_node.dir
+/home/nico/Desktop/code_projects/blockchain_experiments/bft_fundamentals/build/CMakeFiles/edit_cache.dir
+/home/nico/Desktop/code_projects/blockchain_experiments/bft_fundamentals/build/CMakeFiles/rebuild_cache.dir

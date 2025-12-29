@@ -1,4 +1,4 @@
-#include "network.h"
+#include "../include/network.h"
 #include <cstring>
 #include <stdexcept>
 
