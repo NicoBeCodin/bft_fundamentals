@@ -23,7 +23,7 @@ uint32_t Node::get_quorum_size() const {
 
 void Node::start() {
   if (running_.exchange(true)) return;
-  transport_->start();
+  transport_->start(id());
   worker_ = std::thread(&Node::run, this);
 }
 
@@ -37,7 +37,7 @@ void Node::stop() {
   transport_->stop();
 }
 
-void Node::on_receive(Message&& msg) {
+void Node::on_receive(P2PMessage&& msg) {
   {
     std::lock_guard<std::mutex> lk(q_mtx_);
     untreated_.push_front(std::move(msg));
@@ -45,17 +45,12 @@ void Node::on_receive(Message&& msg) {
   q_cv_.notify_one();
 }
 
-void Node::send_to(uint32_t to, Block block) {
-  Message m{ id_, to, block };
-  transport_->send(to, m);
+void Node::broadcast(const BFTProposal& block){
+  transport_->broadcast(block);
 }
 
-void Node::broadcast(Block block) {
-  Message m{ id_, UINT32_MAX, block };
-  transport_->broadcast(m);
-}
 
-void Node::print_message(const Message& m) {
+void Node::print_message(const P2PMessage& m) {
   std::osyncstream bout(std::cout);
   bout << "Node: " << id_ << " " << m << "\n";
 }
@@ -66,14 +61,14 @@ void Node::print_string(const std::string& s) {
 }
 
 void Node::run() {
+  std::string start_string = "Node " + std::to_string(id_) + " started";
+  print_string(start_string);
   consensus_->on_start(*this);
 
   while (running_.load()) {
-    std::unique_lock<std::mutex> lk(q_mtx_);
-    q_cv_.wait(lk, [&]{ return !running_.load() || !untreated_.empty(); });
-    if (!running_.load()) break;
-
-    // Process queue (under lock, like your current approach)
+    P2PMessage msg = transport_->recv();
+    on_receive(std::move(msg));  
+    // Process queue under lock
     treat_message_queue();
   }
 
@@ -88,7 +83,7 @@ void Node::treat_message_queue() {
     const std::size_t n = untreated_.size();
 
     for (std::size_t k = 0; k < n; ++k) {
-      Message msg = std::move(untreated_.front());
+      P2PMessage msg = std::move(untreated_.front());
       untreated_.pop_front();
 
       // 0 = handled; 1 = retry later; 2 = invalid drop
@@ -96,9 +91,11 @@ void Node::treat_message_queue() {
 
       if (rc == 0) {
         progress = true;
+        print_string("Progressing...");
       } else if (rc == 1) {
         untreated_.push_back(std::move(msg));
       } else {
+        print_string("WEIRD CASE");
         // drop invalid
       }
     }

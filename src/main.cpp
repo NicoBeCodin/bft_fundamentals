@@ -1,80 +1,55 @@
 #include "../include/node.h"
-#include "../include/tcp_transport.h"
 #include "../include/bft_consensus.h"
+#include "../include/thread_network.h"
 #include <cstdlib>
 #include <iostream>
-#include <sstream>
 
-static uint32_t env_u32(const char* k, uint32_t def) {
-  const char* v = std::getenv(k);
-  if (!v) return def;
-  try { return static_cast<uint32_t>(std::stoul(v)); } catch (...) { return def; }
-}
-
-static uint16_t env_u16(const char* k, uint16_t def) {
-  const char* v = std::getenv(k);
-  if (!v) return def;
-  try { return static_cast<uint16_t>(std::stoul(v)); } catch (...) { return def; }
-}
-
-static std::vector<PeerInfo> parse_peers(const std::string& s) {
-  // Format: id@host:port,id@host:port
-  std::vector<PeerInfo> out;
-  std::stringstream ss(s);
-  std::string item;
-  while (std::getline(ss, item, ',')) {
-    if (item.empty()) continue;
-    auto at = item.find('@');
-    auto colon = item.rfind(':');
-    if (at == std::string::npos || colon == std::string::npos || colon < at) continue;
-
-    uint32_t id = 0;
-    try { id = static_cast<uint32_t>(std::stoul(item.substr(0, at))); } catch (...) { continue; }
-
-    std::string host = item.substr(at + 1, colon - (at + 1));
-    uint16_t port = 0;
-    try { port = static_cast<uint16_t>(std::stoul(item.substr(colon + 1))); } catch (...) { continue; }
-
-    out.push_back(PeerInfo{id, host, port});
+int main(int argc, char* argv[]) {
+  if (argc < 2){
+    std::cerr << "Usage: ./run [number_of_nodes]";
+    throw std::runtime_error("Not enough arguments");
   }
-  return out;
-}
+  
+  uint32_t n_nodes = std::stoi(argv[1]);
 
-int main() {
-  const uint32_t node_id = env_u32("NODE_ID", 0);
-  const uint16_t listen_port = env_u16("LISTEN_PORT", 9000);
-  const uint32_t cluster_size = env_u32("CLUSTER_SIZE", 4);
+  auto shared_inboxes = std::make_shared<SharedInboxes>(n_nodes);
+  std::vector<std::unique_ptr<Node>> nodes;
+  nodes.reserve(n_nodes);
 
-  const char* peers_env = std::getenv("PEERS");
-  std::string peers_s = peers_env ? std::string(peers_env) : "";
-  auto peers = parse_peers(peers_s);
+  //Launch nodes
+  for (size_t i =0; i< n_nodes; ++i){
+    auto consensus = std::make_unique<BFTConsensus>();
+    auto thread_transport = std::make_unique<ThreadTransport>(i, shared_inboxes);
+    nodes.push_back(std::make_unique<Node>(i, n_nodes, std::move(thread_transport), std::move(consensus)));
+  }
 
-  std::cout << "Starting node_id=" << node_id
-            << " listen_port=" << listen_port
-            << " cluster_size=" << cluster_size
-            << " peers=\"" << peers_s << "\"\n";
-
-  // Node deliver callback
-  Node* node_ptr = nullptr;
-
-  auto deliver = [&](Message&& m) {
-    if (node_ptr) node_ptr->on_receive(std::move(m));
+  std::cout << "Starting " << n_nodes << " nodes\n";
+  for (auto& n: nodes){
+    n->start();
+  }
+  std::this_thread::sleep_for(std::chrono::seconds(1));
+  //Initial message
+  BFTProposal initial_block = BFTProposal {
+    BFTPhase::PrePrepare,
+    0,
+    0,
+    BlockData {
+    67
+  }
   };
 
-  auto transport = std::make_unique<TcpTransport>(
-      node_id, listen_port, peers, static_cast<size_t>(cluster_size), deliver);
+  
 
-  auto consensus = std::make_unique<BFTConsensus>(/*leader_id=*/0);
+  // nodes[0]->print_string("Test");
+  // nodes[0]->broadcast(initial_block);
 
-  Node node(node_id, cluster_size, std::move(transport), std::move(consensus));
-  node_ptr = &node;
+  
 
-  node.start();
-
-  // Run forever (Ctrl+C to stop container)
-  // In production you'd handle signals to stop cleanly.
+  
+ 
+  
   while (true) {
-    std::this_thread::sleep_for(std::chrono::seconds(60));
+    std::this_thread::sleep_for(std::chrono::seconds(3));
   }
 
   return 0;

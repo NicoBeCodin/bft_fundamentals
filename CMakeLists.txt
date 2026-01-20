@@ -1,24 +1,24 @@
 cmake_minimum_required(VERSION 3.16)
-project(bft_node LANGUAGES CXX)
+project(bft_fundamentals LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-add_executable(bft_node
+add_executable(run
   src/main.cpp
   src/node.cpp
-  src/tcp_transport.cpp
   src/bft_consensus.cpp
   src/message.cpp
+  src/thread_network.cpp
 )
 
-target_include_directories(bft_node PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
+target_include_directories(run PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
 
 find_package(Threads REQUIRED)
-target_link_libraries(bft_node PRIVATE Threads::Threads)
+target_link_libraries(run PRIVATE Threads::Threads)
 
 # Optional: nicer warnings
 if (CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
-  target_compile_options(bft_node PRIVATE -Wall -Wextra -Wpedantic)
+  target_compile_options(run PRIVATE -Wall -Wextra -Wpedantic)
 endif()
