@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.16)
 project(bft_fundamentals LANGUAGES CXX)
 
+find_package(OpenSSL REQUIRED)
+
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
@@ -16,7 +18,7 @@ add_executable(run
 target_include_directories(run PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
 
 find_package(Threads REQUIRED)
-target_link_libraries(run PRIVATE Threads::Threads)
+target_link_libraries(run PRIVATE Threads::Threads OpenSSL::Crypto)
 
 # Optional: nicer warnings
 if (CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")

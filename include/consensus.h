@@ -5,12 +5,16 @@
 
 class Node;
 class P2PMessage;
-class BlockData;
+class Block;
 
 class IConsensus {
 public:
   virtual ~IConsensus()=default;
   virtual void on_start(Node& node) = 0;
+  virtual Block last_commited_block() = 0;
+  virtual uint32_t get_leader() = 0;
+  virtual uint32_t get_slot() = 0;
+
 
   //0 for success
   // 1 for not yet treatable

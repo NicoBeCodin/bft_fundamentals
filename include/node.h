@@ -26,13 +26,15 @@ public:
 
   uint32_t id() const noexcept { return id_; }
   uint32_t get_quorum_size() const;
-
-  void broadcast(const BFTProposal& block);
+  
+  void broadcast(const BlockProposal bp);
+  void broadcast(const BFTVote& block);
   size_t get_cluster_size(){ return transport_->cluster_size();}
 
   // Called by transport thread(s) when a message arrives
   void on_receive(P2PMessage&& msg);
 
+  void propose_random_block();
   // Consensus uses these
   // void send_to(uint32_t to, Block block);
   // void broadcast(Block block);
@@ -42,7 +44,7 @@ public:
 
   void run();
   void treat_message_queue();
-
+ 
 private:
   uint32_t id_;
   size_t cluster_size_;

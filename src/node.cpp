@@ -8,7 +8,9 @@ Node::Node(uint32_t id,
   : id_(id),
     cluster_size_(cluster_size),
     transport_(std::move(transport)),
-    consensus_(std::move(consensus)) {}
+    consensus_(std::move(consensus)) {
+      
+    }
 
 Node::~Node() {
   stop();
@@ -44,23 +46,59 @@ void Node::on_receive(P2PMessage&& msg) {
   }
   q_cv_.notify_one();
 }
+void Node::broadcast(BlockProposal bp){
+  P2PMessage msg{
+    id_,
+    0,
+    MessageKind::BlockProposalMessage,
+    std::move(bp.to_payload()),
+};
+transport_->broadcast(msg);
+}
 
-void Node::broadcast(const BFTProposal& block){
-  transport_->broadcast(block);
+void Node::broadcast(const BFTVote& vote){
+  P2PMessage msg{
+    id_,
+    0,
+    MessageKind::BFTVoteMessage,
+    std::move(vote.to_payload()),
+  };
+  transport_->broadcast(msg);
 }
 
 
-void Node::print_message(const P2PMessage& m) {
-  std::osyncstream bout(std::cout);
-  bout << "Node: " << id_ << " " << m << "\n";
-}
+// void Node::print_message(const P2PMessage& m) {
+//   std::osyncstream bout(std::cout);
+//   bout << "Node: " << id_ << " " << m << "\n";
+// }
 
 void Node::print_string(const std::string& s) {
   std::osyncstream bout(std::cout);
   bout << "Node: " << id_ << " " << s << "\n";
 }
 
+
+void Node::propose_random_block(){
+  Block last_block = consensus_->last_commited_block();
+
+  Block new_block = Block {
+    last_block.height+1,
+    last_block.hash_block_data_to_bytes(),
+    std::string("This is node:" + std::to_string(id())+ " speaking"),    
+  };
+  
+  BlockProposal block_proposal = BlockProposal {
+    id_,
+    consensus_->get_slot()+1,
+    new_block,
+  };
+
+  broadcast(block_proposal);
+  
+}
+
 void Node::run() {
+  
   std::string start_string = "Node " + std::to_string(id_) + " started";
   print_string(start_string);
   consensus_->on_start(*this);
@@ -91,7 +129,6 @@ void Node::treat_message_queue() {
 
       if (rc == 0) {
         progress = true;
-        print_string("Progressing...");
       } else if (rc == 1) {
         untreated_.push_back(std::move(msg));
       } else {

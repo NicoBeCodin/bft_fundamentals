@@ -48,9 +48,9 @@ class ThreadTransport: public ITransport{
     void start(uint32_t node_id) override; //node id of node
     void stop() override;
     
-    void send(uint32_t to, const BFTProposal& block) override;
+    void send(const P2PMessage msg) override;
     P2PMessage recv() override;
-    void broadcast(const BFTProposal& block) override;
+    void broadcast(const P2PMessage msg) override;
     
     size_t size() const noexcept;
     size_t f_size() const noexcept;

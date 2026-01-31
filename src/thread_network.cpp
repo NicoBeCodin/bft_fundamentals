@@ -38,15 +38,10 @@ void ThreadTransport::stop(){
 }
 
 
-void ThreadTransport::send(uint32_t to, const BFTProposal& block) {
-  if (static_cast<uint32_t>(shared_inboxes->inboxes.size()) <= to) {
+void ThreadTransport::send(const P2PMessage msg) {
+  if (static_cast<uint32_t>(shared_inboxes->inboxes.size()) <= msg.to) {
     throw std::out_of_range("Invalid destination id");
   }
-  P2PMessage msg = P2PMessage{
-    node_id,
-    to,
-    block,
-  };
   shared_inboxes->inboxes[msg.to]->push(msg);
 }
 
@@ -58,11 +53,13 @@ P2PMessage ThreadTransport::recv() {
   return shared_inboxes->inboxes[node_id]->wait_and_pop();
 }
 
-void ThreadTransport::broadcast(const BFTProposal& block) {
+void ThreadTransport::broadcast(const P2PMessage msg) {
   for (uint32_t i= 0; i < shared_inboxes->inboxes.size(); ++i) {
     if (i == node_id)
       continue;
-    send(i, block);
+    P2PMessage new_msg = msg;
+    new_msg.to = i;
+    send(new_msg);
   }
 }
 

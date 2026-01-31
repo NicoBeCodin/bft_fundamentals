@@ -29,19 +29,9 @@ int main(int argc, char* argv[]) {
   }
   std::this_thread::sleep_for(std::chrono::seconds(1));
   //Initial message
-  BFTProposal initial_block = BFTProposal {
-    BFTPhase::PrePrepare,
-    0,
-    0,
-    BlockData {
-    67
-  }
-  };
 
-  
+  nodes[0]->propose_random_block();
 
-  // nodes[0]->print_string("Test");
-  // nodes[0]->broadcast(initial_block);
 
   
 

@@ -24,8 +24,8 @@ public:
   virtual void start(uint32_t node_id) = 0;
   virtual void stop() = 0;
 
-  virtual void send(uint32_t to, const BFTProposal& msg) = 0;
-  virtual void broadcast(const BFTProposal& msg) = 0;
+  virtual void send(P2PMessage) = 0;
+  virtual void broadcast(const P2PMessage msg) = 0;
   virtual P2PMessage recv() = 0;
 
   virtual size_t cluster_size() const = 0;
