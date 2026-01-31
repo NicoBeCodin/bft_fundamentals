@@ -79,22 +79,26 @@ void Node::print_string(const std::string& s) {
 
 
 void Node::propose_random_block(){
-  Block last_block = consensus_->last_commited_block();
-
-  Block new_block = Block {
-    last_block.height+1,
-    last_block.hash_block_data_to_bytes(),
-    std::string("This is node:" + std::to_string(id())+ " speaking"),    
-  };
+  BlockProposal bp = consensus_->create_random_block(consensus_->get_leader(), consensus_->get_slot());
+  //Testing
+  std::ostringstream oss;
+  oss << bp;
+  auto before = oss.str();
+  auto vec  = bp.to_payload();
+  auto after = *BlockProposal::from_payload(vec);
+  std::ostringstream osss;
   
-  BlockProposal block_proposal = BlockProposal {
-    id_,
-    consensus_->get_slot()+1,
-    new_block,
-  };
-
-  broadcast(block_proposal);
+  osss << after;
+  auto after_string = osss.str();
+  print_string(before);
+  print_string(after_string);
   
+  
+    
+  
+  
+  
+  broadcast(bp);
 }
 
 void Node::run() {

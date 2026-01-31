@@ -1,5 +1,6 @@
 #pragma once
-//Plain virtual interface for the consensus algorithm that we will assign to the nodes
+//Plain virtual interface for the consensus algorithm that we will assign to the node
+#include "message.h"
 #include <cstdint>
 #include <optional>
 
@@ -14,6 +15,7 @@ public:
   virtual Block last_commited_block() = 0;
   virtual uint32_t get_leader() = 0;
   virtual uint32_t get_slot() = 0;
+  virtual BlockProposal create_random_block(uint32_t, uint32_t) = 0;
 
 
   //0 for success

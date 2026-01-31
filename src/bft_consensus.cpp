@@ -65,9 +65,31 @@ BFTVote BFTConsensus::make_bft_vote(Node& n, BlockProposal& bp, BFTPhase phase){
   
 }
 
+
+BlockProposal BFTConsensus::create_random_block(uint32_t slot, uint32_t leader){
+  Block last_block = last_commited_block();
+
+  Block new_block = Block {
+    last_block.height+1,
+    last_block.hash_block_data_to_bytes(),
+    std::string("This is block"),    
+  };
+  
+  BlockProposal block_proposal = BlockProposal {
+    leader,
+    get_slot()+1,
+    new_block,
+  };
+
+   return block_proposal; 
+}
 uint8_t BFTConsensus::handle_block_proposal(const P2PMessage& msg, Node& node) {
   BlockProposal proposed_block;
-  proposed_block.from_payload(msg.payload);
+  proposed_block = *proposed_block.from_payload(msg.payload);
+  std::ostringstream oss;
+  auto received_string = oss.str();
+  node.print_string(received_string);
+
 
   //Could relax this in the future
   if (msg.from != leader_) {
@@ -75,9 +97,9 @@ uint8_t BFTConsensus::handle_block_proposal(const P2PMessage& msg, Node& node) {
     return 2;
   }
 
-  //Not agreeing on slot
-  if (proposed_block.slot != slot_) {
-    node.print_string("PrePrepare has wrong slot/instance_id");
+  //Agreeing on next slot
+  if (proposed_block.slot != slot_ +1) {
+    node.print_string("PrePrepare has wrong slot:  " + std::to_string(proposed_block.slot));
     return 1;
   }
 

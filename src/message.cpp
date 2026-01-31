@@ -28,7 +28,7 @@ std::array<uint8_t, 32> sha256_bytes(const std::string& s) {
 BlockHash Block::hash_block_data_to_bytes() {
     std::string height_string = std::to_string(height);
     
-    std::string previous_hash_string(reinterpret_cast<char*>(previous_hash.data()));    
+    std::string previous_hash_string(reinterpret_cast<const char*>(previous_hash.data()), previous_hash.size());    
     
     return sha256_bytes(height_string + previous_hash_string + transactions);
 }
@@ -36,7 +36,7 @@ BlockHash Block::hash_block_data_to_bytes() {
 std::vector<uint8_t> Block::to_payload(){
   Writer w;
   w.u32(height);
-  w.write_hash(hash_block_data_to_bytes());
+  w.write_hash(previous_hash);
   w.write_str(transactions);
   return w.buffer;
 }
@@ -63,7 +63,7 @@ std::vector<uint8_t> BlockProposal::to_payload(){
   return w.buffer;
 }
 
-std::optional<BlockProposal> BlockProposal::from_payload(std::vector<uint8_t> pl){
+std::optional<BlockProposal> BlockProposal::from_payload(const std::vector<uint8_t>& pl){
   Reader r(pl);
   BlockProposal bp;
   auto view = r.read_u32();
@@ -74,7 +74,7 @@ std::optional<BlockProposal> BlockProposal::from_payload(std::vector<uint8_t> pl
   memcpy(block_vector.data(), r.p, r.n);
   auto block_opt = Block::from_payload(block_vector);
   
-  if (!view | !slot | !block_opt) return std::nullopt;
+  if (!view || !slot || !block_opt) return std::nullopt;
   
   bp.view = *view;
   bp.slot = *slot;
@@ -93,7 +93,7 @@ std::vector<uint8_t> BFTVote::to_payload() const{
   return w.buffer;
 }
 
-std::optional<BFTVote> BFTVote::from_payload(std::vector<uint8_t> pl){
+std::optional<BFTVote> BFTVote::from_payload(const std::vector<uint8_t>& pl){
   Reader r(pl);
   BFTVote bft_vote;
   auto view = r.read_u32();
@@ -101,7 +101,7 @@ std::optional<BFTVote> BFTVote::from_payload(std::vector<uint8_t> pl){
   auto votes = r.read_u32_vector();
   auto phase = r.read_phase();
   auto bh = r.read_blockhash();
-  if (!view | !slot | !votes | !phase | !bh) return std::nullopt;
+  if (!view || !slot || !votes || !phase || !bh) return std::nullopt;
   bft_vote.leader = *view;
   bft_vote.slot = *slot;
   bft_vote.votes = *votes;
@@ -126,14 +126,4 @@ std::string message_kind_to_string(MessageKind m){
     }
 }
 
-// std::string to_hex(const std::array<unsigned char, 32>& h) {
-//   std::ostringstream oss;
-//   oss << std::hex << std::setfill('0');
-//   for (auto b : h) oss << std::setw(2) << (int)b;
-//   return oss.str();
-// }
-
-// std::string sha256_hex(const std::string& s) {
-//   return to_hex(sha256_bytes(s));
-// }
 

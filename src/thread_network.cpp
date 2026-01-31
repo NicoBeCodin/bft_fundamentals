@@ -29,7 +29,7 @@ size_t ThreadSafeQueue<T>::current_size(){
 
 void ThreadTransport::start(uint32_t node_id){
    // size_t current_size=  shared_inboxes->inboxes[node_id]->current_size();
-   node_id = node_id;
+   this->node_id_ = node_id;
    // std::cout << "Node: " << node_id << " initialized inbox, current size: " << current_size << std::endl;
    
 }
@@ -42,20 +42,20 @@ void ThreadTransport::send(const P2PMessage msg) {
   if (static_cast<uint32_t>(shared_inboxes->inboxes.size()) <= msg.to) {
     throw std::out_of_range("Invalid destination id");
   }
-  shared_inboxes->inboxes[msg.to]->push(msg);
+  shared_inboxes->inboxes[msg.to]->push(std::move(msg));
 }
 
 
 P2PMessage ThreadTransport::recv() {
-  if (node_id >= shared_inboxes->inboxes.size()) {
+  if (node_id_ >= shared_inboxes->inboxes.size()) {
     throw std::out_of_range("Invalid receiver id");
   }
-  return shared_inboxes->inboxes[node_id]->wait_and_pop();
+  return shared_inboxes->inboxes[node_id_]->wait_and_pop();
 }
 
 void ThreadTransport::broadcast(const P2PMessage msg) {
   for (uint32_t i= 0; i < shared_inboxes->inboxes.size(); ++i) {
-    if (i == node_id)
+    if (i == node_id_)
       continue;
     P2PMessage new_msg = msg;
     new_msg.to = i;

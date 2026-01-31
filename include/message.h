@@ -49,7 +49,7 @@ struct BFTVote {
   BlockHash blockhash; // Could be replaced by hash
 
   std::vector<uint8_t> to_payload() const;
-  static std::optional<BFTVote> from_payload(std::vector<uint8_t>);
+  static std::optional<BFTVote> from_payload(const std::vector<uint8_t>& );
 };
 
 struct BlockProposal {
@@ -58,7 +58,7 @@ struct BlockProposal {
   Block block;
 
   std::vector<uint8_t> to_payload();
-  static std::optional<BlockProposal> from_payload(std::vector<uint8_t>);
+  static std::optional<BlockProposal> from_payload(const std::vector<uint8_t>&);
 };
 
 // inline BlockProposal proposal_key(const BFTVote &b) {
@@ -135,7 +135,7 @@ public:
   };
 
   void write_hash(BlockHash hash){
-    buffer.insert(buffer.end(), &hash[0], &hash[32]);
+    buffer.insert(buffer.end(), hash.data(), hash.data() + hash.size());
   }
 
   void write_str(std::string &s) {
@@ -206,15 +206,15 @@ public:
       return std::nullopt;
     std::string s(reinterpret_cast<const char *>(p),
                   reinterpret_cast<const char *>(p + len));
-    p+=32;
-    n-=32;
+    p+=len;
+    n-=len;
     return s;
   }
 
   std::optional<BFTPhase> read_phase(){
     BFTPhase vote;
     
-    if (p == 0){
+    if (p[0] == 0){
       vote = BFTPhase::Prepare;
     } else {
       vote = BFTPhase::Commit;
@@ -260,14 +260,46 @@ inline std::ostream &operator<<(std::ostream &os, const P2PMessage &m) {
 
 std::string to_hex(const uint8_t* data, size_t n);
 
-inline std::ostream &operator<<(std::ostream& os, const BlockHash bh){
-  return os << to_hex(bh.begin(), 32);
+
+inline std::ostream& operator<<(std::ostream& os, const BlockHash& bh) {
+  return os << to_hex(bh.data(), bh.size());
 }
 
-inline std::string block_string(const BFTVote &b) {
-  std::ostringstream oss;
-  oss << "view=" << b.leader << " instance=" << b.slot
-      << " type=" << to_string(b.phase)
-      << " blockhash=" << b.blockhash;
-  return oss.str();
+// Print Block fully
+inline std::ostream& operator<<(std::ostream& os, const Block& b) {
+  os << "Block{height=" << b.height
+     << ", previous_hash=" << b.previous_hash
+     << ", transactions=\"" << b.transactions << "\"}";
+  return os;
+}
+
+// Helper: print vector<uint32_t> nicely
+inline std::ostream& operator<<(std::ostream& os, const std::vector<uint32_t>& v) {
+  os << "[";
+  for (size_t i = 0; i < v.size(); ++i) {
+    os << v[i];
+    if (i + 1 < v.size()) os << ", ";
+  }
+  os << "]";
+  return os;
+}
+
+// Print BFTVote fully
+inline std::ostream& operator<<(std::ostream& os, const BFTVote& v) {
+  os << "BFTVote{leader=" << v.leader
+     << ", slot=" << v.slot
+     << ", phase=" << to_string(v.phase)
+     << ", blockhash=" << v.blockhash
+     << ", votes=" << v.votes
+     << "}";
+  return os;
+}
+
+// Print BlockProposal fully
+inline std::ostream& operator<<(std::ostream& os, const BlockProposal& p) {
+  os << "BlockProposal{view=" << p.view
+     << ", slot=" << p.slot
+     << ", block=" << p.block
+     << "}";
+  return os;
 }

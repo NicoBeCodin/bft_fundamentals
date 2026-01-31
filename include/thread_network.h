@@ -42,7 +42,7 @@ struct SharedInboxes {
 
 class ThreadTransport: public ITransport{
   public:
-    explicit ThreadTransport(uint32_t node_id, std::shared_ptr<SharedInboxes> inboxes): node_id(node_id), shared_inboxes(inboxes){
+    explicit ThreadTransport(uint32_t node_id, std::shared_ptr<SharedInboxes> inboxes): node_id_(node_id), shared_inboxes(inboxes){
     };
     //Dummy functions (not used for thread communications)
     void start(uint32_t node_id) override; //node id of node
@@ -59,7 +59,7 @@ class ThreadTransport: public ITransport{
     
   private:
     std::shared_ptr<SharedInboxes> shared_inboxes;
-    uint32_t node_id;
+    uint32_t node_id_;
     
 };
 

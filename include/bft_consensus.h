@@ -17,6 +17,7 @@ public:
   uint32_t get_leader() override;
   uint32_t get_slot() override;
   
+  BlockProposal create_random_block(uint32_t, uint32_t) override;
 
 private:
   bool is_leader(uint32_t node_id) const { return node_id == leader_; }
