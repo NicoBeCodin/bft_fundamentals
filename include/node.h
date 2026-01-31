@@ -28,7 +28,7 @@ public:
   uint32_t get_quorum_size() const;
   
   void broadcast(const BlockProposal bp);
-  void broadcast(const BFTVote& block);
+  void broadcast(const BFTVote block);
   size_t get_cluster_size(){ return transport_->cluster_size();}
 
   // Called by transport thread(s) when a message arrives

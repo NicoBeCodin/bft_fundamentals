@@ -11,7 +11,8 @@
 
 typedef std::array<uint8_t, 32> BlockHash;
 
-const BlockHash GENESIS_HASH = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+const BlockHash GENESIS_HASH = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
 // The blockdata that we will agree on
 struct Block {
@@ -20,23 +21,22 @@ struct Block {
   std::string transactions;
 
   BlockHash hash_block_data_to_bytes();
-  std::vector<uint8_t> to_payload();
+  std::vector<uint8_t> to_payload() const;
   static std::optional<Block> from_payload(std::vector<uint8_t>);
-  
 };
 
 inline bool operator==(const Block &a, const Block &b) {
-  return a.transactions == b.transactions && a.height == b.height && a.previous_hash == b.previous_hash;
+  return a.transactions == b.transactions && a.height == b.height &&
+         a.previous_hash == b.previous_hash;
 }
-
 
 inline bool operator<(const Block &a, const Block &b) {
   return a.transactions < b.transactions;
 }
 
-//Eventually this could be squeezed in a less than a byte
+// Eventually this could be squeezed in a less than a byte
 enum class BFTPhase : uint8_t {
-  // PrePrepare = 0, //This will be replaced by the Block Proposal struct 
+  // PrePrepare = 0, //This will be replaced by the Block Proposal struct
   Prepare = 0,
   Commit = 1,
 };
@@ -49,7 +49,7 @@ struct BFTVote {
   BlockHash blockhash; // Could be replaced by hash
 
   std::vector<uint8_t> to_payload() const;
-  static std::optional<BFTVote> from_payload(const std::vector<uint8_t>& );
+  static std::optional<BFTVote> from_payload(const std::vector<uint8_t> &);
 };
 
 struct BlockProposal {
@@ -57,14 +57,14 @@ struct BlockProposal {
   uint32_t slot;
   Block block;
 
-  std::vector<uint8_t> to_payload();
-  static std::optional<BlockProposal> from_payload(const std::vector<uint8_t>&);
+  std::vector<uint8_t> to_payload() const;
+  static std::optional<BlockProposal>
+  from_payload(const std::vector<uint8_t> &);
 };
 
 // inline BlockProposal proposal_key(const BFTVote &b) {
 //   return BlockProposal{b.view, b.slot, b.block};
 // }
-
 
 inline bool operator==(const BlockProposal &a, const BlockProposal &b) {
   return (a.slot == b.slot) && (a.block == b.block) && (a.view == b.view);
@@ -114,7 +114,7 @@ class Writer {
 public:
   Writer() = default;
   std::vector<uint8_t> to_payload();
-    
+
   std::vector<uint8_t> buffer;
 
   void u32(uint32_t n) {
@@ -123,44 +123,42 @@ public:
     buffer.push_back(uint8_t(n >> 16) & 0xFF);
     buffer.push_back(uint8_t(n >> 24) & 0xFF);
   }
-  void write_u32_vector(std::vector<uint32_t> vec){
+  void write_u32_vector(const std::vector<uint32_t> &vec) {
     u32(static_cast<uint32_t>(vec.size()));
-    for (uint32_t k: vec){
+    for (uint32_t k : vec) {
       u32(k);
     }
   }
 
-  void write_bytes(uint8_t *p, size_t n) {
+  void write_bytes(const uint8_t *p, size_t n) {
     buffer.insert(buffer.end(), p, p + n);
   };
 
-  void write_hash(BlockHash hash){
+  void write_hash(const BlockHash &hash) {
     buffer.insert(buffer.end(), hash.data(), hash.data() + hash.size());
   }
 
-  void write_str(std::string &s) {
+  void write_str(const std::string &s) {
     u32(s.size());
-    write_bytes(reinterpret_cast<uint8_t *>(s.data()), s.size());
+    write_bytes(reinterpret_cast<const uint8_t *>(s.data()), s.size());
   }
-  
-  void write_payload(std::vector<uint8_t> payload){
-   buffer.insert(buffer.end(), payload.begin(), payload.end()); 
-}
-  void write_phase(BFTPhase phase){
+
+  void write_payload(const std::vector<uint8_t> &payload) {
+    buffer.insert(buffer.end(), payload.begin(), payload.end());
+  }
+  void write_phase(const BFTPhase phase) {
     uint8_t phase_val;
     if (phase == BFTPhase::Prepare) {
-      phase_val = 0;
+    phase_val = 0;
     } else {
       phase_val = 1;
     }
     buffer.push_back(phase_val);
   }
-  
 };
 
 class Reader {
 public:
-  
   Reader(const std::vector<uint8_t> &v) : p(v.data()), n(v.size()){};
 
   const uint8_t *p{};
@@ -178,12 +176,13 @@ public:
     return v;
   }
 
-  std::optional<std::vector<uint32_t>>read_u32_vector(){
+  std::optional<std::vector<uint32_t>> read_u32_vector() {
     auto size = read_u32();
-    if (!size) return std::nullopt;
+    if (!size)
+      return std::nullopt;
     std::vector<uint32_t> vec;
     vec.resize(*size);
-    for (uint32_t i = 0; i < *size; ++i){
+    for (uint32_t i = 0; i < *size; ++i) {
       vec[i] = *read_u32();
     }
     return vec;
@@ -206,51 +205,33 @@ public:
       return std::nullopt;
     std::string s(reinterpret_cast<const char *>(p),
                   reinterpret_cast<const char *>(p + len));
-    p+=len;
-    n-=len;
+    p += len;
+    n -= len;
     return s;
   }
 
-  std::optional<BFTPhase> read_phase(){
+  std::optional<BFTPhase> read_phase() {
     BFTPhase vote;
-    
-    if (p[0] == 0){
+
+    if (p[0] == 0) {
       vote = BFTPhase::Prepare;
     } else {
       vote = BFTPhase::Commit;
     }
-    p+=1;
-    n-=1;
+    p += 1;
+    n -= 1;
     return std::optional<BFTPhase>(vote);
   }
-  
-  
 };
 
-const char* to_string(BFTPhase t);
-
-
-// inline std::ostream &operator<<(std::ostream &os, BFTPhase t) {
-//   return os << to_string(t);
-// }
-
-// inline std::ostream &operator<<(std::ostream &os, const Block &v) {
-//   return os << " Transactions: "<< v.transactions; 
-// }
-
-// inline std::ostream &operator<<(std::ostream &os, const BFTVote &b) {
-//   return os << "Block{type=" << to_string(b.phase) << ", view=" << b.leader
-//             << ", instance_id=" << b.slot << ", value=" << b.blockhash << "}";
-// }
+const char *to_string(BFTPhase t);
 
 
 std::string message_kind_to_string(MessageKind);
 
-inline std::ostream &operator<<(std::ostream &os, const MessageKind &m){
-  return os << "MessageKind=" << message_kind_to_string(m); {
-    
-  } 
-  
+inline std::ostream &operator<<(std::ostream &os, const MessageKind &m) {
+  return os << "MessageKind=" << message_kind_to_string(m);
+  {}
 }
 
 inline std::ostream &operator<<(std::ostream &os, const P2PMessage &m) {
@@ -258,48 +239,43 @@ inline std::ostream &operator<<(std::ostream &os, const P2PMessage &m) {
             << ", block=" << m.msg_kind << "}";
 }
 
-std::string to_hex(const uint8_t* data, size_t n);
+std::string to_hex(const uint8_t *data, size_t n);
 
-
-inline std::ostream& operator<<(std::ostream& os, const BlockHash& bh) {
+inline std::ostream &operator<<(std::ostream &os, const BlockHash &bh) {
   return os << to_hex(bh.data(), bh.size());
 }
 
 // Print Block fully
-inline std::ostream& operator<<(std::ostream& os, const Block& b) {
-  os << "Block{height=" << b.height
-     << ", previous_hash=" << b.previous_hash
+inline std::ostream &operator<<(std::ostream &os, const Block &b) {
+  os << "Block{height=" << b.height << ", previous_hash=" << b.previous_hash
      << ", transactions=\"" << b.transactions << "\"}";
   return os;
 }
 
 // Helper: print vector<uint32_t> nicely
-inline std::ostream& operator<<(std::ostream& os, const std::vector<uint32_t>& v) {
+inline std::ostream &operator<<(std::ostream &os,
+                                const std::vector<uint32_t> &v) {
   os << "[";
   for (size_t i = 0; i < v.size(); ++i) {
     os << v[i];
-    if (i + 1 < v.size()) os << ", ";
+    if (i + 1 < v.size())
+      os << ", ";
   }
   os << "]";
   return os;
 }
 
 // Print BFTVote fully
-inline std::ostream& operator<<(std::ostream& os, const BFTVote& v) {
-  os << "BFTVote{leader=" << v.leader
-     << ", slot=" << v.slot
-     << ", phase=" << to_string(v.phase)
-     << ", blockhash=" << v.blockhash
-     << ", votes=" << v.votes
-     << "}";
+inline std::ostream &operator<<(std::ostream &os, const BFTVote &v) {
+  os << "BFTVote{leader=" << v.leader << ", slot=" << v.slot
+     << ", phase=" << to_string(v.phase) << ", blockhash=" << v.blockhash
+     << ", votes=" << v.votes << "}";
   return os;
 }
 
 // Print BlockProposal fully
-inline std::ostream& operator<<(std::ostream& os, const BlockProposal& p) {
-  os << "BlockProposal{view=" << p.view
-     << ", slot=" << p.slot
-     << ", block=" << p.block
-     << "}";
+inline std::ostream &operator<<(std::ostream &os, const BlockProposal &p) {
+  os << "BlockProposal{view=" << p.view << ", slot=" << p.slot
+     << ", block=" << p.block << "}";
   return os;
 }

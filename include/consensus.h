@@ -16,6 +16,7 @@ public:
   virtual uint32_t get_leader() = 0;
   virtual uint32_t get_slot() = 0;
   virtual BlockProposal create_random_block(uint32_t, uint32_t) = 0;
+  virtual void insert_proposed_block(BlockProposal bp) =0;
 
 
   //0 for success

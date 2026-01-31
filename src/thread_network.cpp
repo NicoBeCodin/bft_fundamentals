@@ -1,4 +1,3 @@
-#pragma once
 #include "../include/thread_network.h"
 #include <cstring>
 #include <stdexcept>

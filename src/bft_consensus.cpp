@@ -8,10 +8,7 @@ BFTConsensus::BFTConsensus(uint32_t leader_id)
   }
 
 void BFTConsensus::on_start(Node& node) {
-  if (is_leader(node.id())) {
-    Block v{67};
-    propose(v, node);
-  }
+    //Coule be initial message  
 }
 
 Block BFTConsensus::last_commited_block(){
@@ -37,9 +34,10 @@ uint8_t BFTConsensus::handle_bft_vote_message(const P2PMessage& msg, Node& node)
     return handle_commit(msg, node);
   }
 }
-// static bool same_proposal(const BFTProposal& a, const BFTProposal& b){
-//   return a.view == b.view && a.slot == b.slot && a.value == b.value;
-// }
+
+void BFTConsensus::insert_proposed_block(BlockProposal bp) {
+  recent_proposed_block = std::make_unique<BlockProposal>(bp);
+}
 
 BlockProposal BFTConsensus::make_block_proposal(const Block& block) const {
   return BlockProposal{ leader_, slot_+1, block }; //For next slot
@@ -85,11 +83,15 @@ BlockProposal BFTConsensus::create_random_block(uint32_t slot, uint32_t leader){
 }
 uint8_t BFTConsensus::handle_block_proposal(const P2PMessage& msg, Node& node) {
   BlockProposal proposed_block;
-  proposed_block = *proposed_block.from_payload(msg.payload);
+
+  
+  auto maybe_bp = proposed_block.from_payload(msg.payload);
+  if (!maybe_bp) return 2;
+  proposed_block = *maybe_bp;
   std::ostringstream oss;
+  oss << proposed_block;
   auto received_string = oss.str();
   node.print_string(received_string);
-
 
   //Could relax this in the future
   if (msg.from != leader_) {
@@ -100,17 +102,17 @@ uint8_t BFTConsensus::handle_block_proposal(const P2PMessage& msg, Node& node) {
   //Agreeing on next slot
   if (proposed_block.slot != slot_ +1) {
     node.print_string("PrePrepare has wrong slot:  " + std::to_string(proposed_block.slot));
-    return 1;
+    return 2;
   }
 
   //Avoid doing it twice
   if (recent_proposed_block && *recent_proposed_block == proposed_block ) {
     node.print_string("Already saw this PrePrepare");
-    return 1;
+    return 2;
   }
   if (recent_proposed_block && recent_proposed_block->block.height != commited_blocks_chain.back().height+1){
     node.print_string("Proposed block isn't higher than most recent commited");
-    return 1;
+    return 2;
   }
 
   recent_proposed_block = std::make_unique<BlockProposal>(proposed_block);
@@ -137,13 +139,13 @@ uint8_t BFTConsensus::handle_prepare(const P2PMessage& msg, Node& node) {
   }
   if (prepare_vote.slot != slot_) {
     node.print_string("Prepare has invalid slot");
-    return 1;
+    return 2;
   }
 
   auto& current_prepare_votes = prepare_votes_[recent_bh];
   if (current_prepare_votes.find(msg.from) != current_prepare_votes.end()) {
     node.print_string("Duplicate Prepare from same node");
-    return 1;
+    return 2;
   }
 
   // Require matching pre-prepare before counting prepares (PBFT dependency)
@@ -180,7 +182,9 @@ uint8_t BFTConsensus::handle_prepare(const P2PMessage& msg, Node& node) {
 }
 
 uint8_t BFTConsensus::handle_commit(const P2PMessage& msg, Node& node) {
-  BFTVote bft_vote = *BFTVote::from_payload(msg.payload);
+  auto maybe_bft_vote = BFTVote::from_payload(msg.payload);
+  if (!maybe_bft_vote) return 2;
+  BFTVote bft_vote = *maybe_bft_vote;
   BlockHash key = bft_vote.blockhash;
   
   
@@ -190,7 +194,7 @@ uint8_t BFTConsensus::handle_commit(const P2PMessage& msg, Node& node) {
   }
   if (bft_vote.slot != slot_) {
     node.print_string("Commit has invalid slot");
-    return 1;
+    return 2;
   }
 
   // Must match leader's pre-prepare
@@ -204,7 +208,7 @@ uint8_t BFTConsensus::handle_commit(const P2PMessage& msg, Node& node) {
   auto& current_votes = commit_votes_[key];
   if (current_votes.find(bft_vote.votes[0]) != current_votes.end()) {
     node.print_string("Duplicate Commit from same node");
-    return 1;
+    return 2;
   }
 
   // Merge msg into pending list and process as a batch
@@ -216,8 +220,8 @@ uint8_t BFTConsensus::handle_commit(const P2PMessage& msg, Node& node) {
     if (current_votes.find(v.votes[0]) != current_votes.end()) continue;
     current_votes.insert(v.votes[0]);
 
-    node.print_string("Commit vote size: " + std::to_string(current_votes.size()) +
-                      " quorum: " + std::to_string(node.get_quorum_size()));
+    // node.print_string("Commit vote size: " + std::to_string(current_votes.size()) +
+    //                   " quorum: " + std::to_string(node.get_quorum_size()));
 
     if (current_votes.size() >= quorum_size(node)) {
       //Ensure we haven't commited it before

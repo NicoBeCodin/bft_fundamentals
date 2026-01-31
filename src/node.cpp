@@ -46,7 +46,7 @@ void Node::on_receive(P2PMessage&& msg) {
   }
   q_cv_.notify_one();
 }
-void Node::broadcast(BlockProposal bp){
+void Node::broadcast(const BlockProposal bp){
   P2PMessage msg{
     id_,
     0,
@@ -56,7 +56,7 @@ void Node::broadcast(BlockProposal bp){
 transport_->broadcast(msg);
 }
 
-void Node::broadcast(const BFTVote& vote){
+void Node::broadcast(BFTVote vote){
   P2PMessage msg{
     id_,
     0,
@@ -93,11 +93,7 @@ void Node::propose_random_block(){
   print_string(before);
   print_string(after_string);
   
-  
-    
-  
-  
-  
+  consensus_->insert_proposed_block(bp);
   broadcast(bp);
 }
 
@@ -129,15 +125,17 @@ void Node::treat_message_queue() {
       untreated_.pop_front();
 
       // 0 = handled; 1 = retry later; 2 = invalid drop
-      uint8_t rc = consensus_->handle_message(msg, *this);
+      uint8_t result = consensus_->handle_message(msg, *this);
 
-      if (rc == 0) {
+      if (result == 0) {
         progress = true;
-      } else if (rc == 1) {
+      } else if (result == 1) {
+        //If a message arrived in the wrong order
         untreated_.push_back(std::move(msg));
-      } else {
-        print_string("WEIRD CASE");
-        // drop invalid
+      } else if (result==2){
+        
+        // drop invalid or useless msg
+        // print_string("Dropping invalid message");
       }
     }
   }
